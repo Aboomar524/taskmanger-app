@@ -14,6 +14,7 @@ const corsOptions = {
     origin: process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : '*',
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true, // إذا كنت تستخدم الكوكيز أو الجلسات
     optionsSuccessStatus: 200
 };
 app.use(cors(corsOptions));
@@ -70,7 +71,7 @@ app.use((err, req, res, next) => {
 });
 
 // Start Server
-const server = app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+const server = app.listen(PORT, "0.0.0.0", () => console.log(`🚀 Server running on port ${PORT}`));
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
