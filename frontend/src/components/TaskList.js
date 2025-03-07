@@ -8,6 +8,8 @@ const TaskList = () => {
     const [editTaskTitle, setEditTaskTitle] = useState("");
     const [error, setError] = useState(null);
     const [taskDetails, setTaskDetails] = useState(null);
+    const [isLoading, setIsLoading] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
 
     useEffect(() => {
         fetchTasks();
@@ -15,11 +17,11 @@ const TaskList = () => {
 
     const fetchTasks = async () => {
         try {
+            setIsLoading(true);
             setError(null);
             const res = await axios.get("http://localhost:5000/api/tasks");
             setTasks(res.data);
 
-            // Log task structure to help diagnose the issue
             if (res.data && res.data.length > 0) {
                 const sampleTask = res.data[0];
                 console.log("Sample task structure:", sampleTask);
@@ -28,19 +30,24 @@ const TaskList = () => {
         } catch (err) {
             console.error("Error fetching tasks:", err);
             setError(`Error fetching tasks: ${err.message}`);
+        } finally {
+            setIsLoading(false);
         }
     };
 
     const addTask = async () => {
         if (!newTask.trim()) return;
         try {
+            setIsLoading(true);
             setError(null);
-            const response = await axios.post("http://localhost:5000/api/tasks", { title: newTask });
-            await fetchTasks();  // Refresh task list after adding
-            setNewTask("");  // Clear input after adding task
+            await axios.post("http://localhost:5000/api/tasks", { title: newTask });
+            await fetchTasks();
+            setNewTask("");
         } catch (err) {
             console.error("Error adding task:", err);
             setError(`Error adding task: ${err.message}`);
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -50,25 +57,14 @@ const TaskList = () => {
             return;
         }
 
+        if (!window.confirm("Are you sure you want to delete this task?")) {
+            return;
+        }
+
         try {
             setError(null);
-            console.log(`Attempting to delete task with ID: ${id}`);
-
-            const response = await axios.delete(`http://localhost:5000/api/tasks/${id}`, {
-                validateStatus: function (status) {
-                    return true;  // Prevent Axios from throwing an error
-                }
-            });
-
-            console.log("Delete response:", response);
-
-            if (response.status === 500) {
-                setError("Server error (500) when deleting. Check if ID format is correct.");
-            } else if (response.status >= 400) {
-                setError(`Error (${response.status}) when deleting: ${response.data.message || 'Unknown error'}`);
-            } else {
-                await fetchTasks();  // Refresh task list after deletion
-            }
+            await axios.delete(`http://localhost:5000/api/tasks/${id}`);
+            await fetchTasks();
         } catch (err) {
             console.error("Error deleting task:", err);
             setError(`Error deleting task: ${err.message}`);
@@ -94,27 +90,17 @@ const TaskList = () => {
         }
 
         try {
+            setIsSaving(true);
             setError(null);
-            console.log(`Updating task with ID: ${editTaskId}`);
-
-            const response = await axios.put(`http://localhost:5000/api/tasks/${editTaskId}`, {
-                title: editTaskTitle
-            });
-
-            console.log("Update response:", response);
-
-            if (response.status === 500) {
-                setError("Server error (500) when updating.");
-            } else if (response.status >= 400) {
-                setError(`Error (${response.status}) when updating: ${response.data.message || 'Unknown error'}`);
-            } else {
-                await fetchTasks();  // Refresh task list after update
-                setEditTaskId(null);  // Clear edit task state
-                setEditTaskTitle("");  // Clear edit task input
-            }
+            await axios.put(`http://localhost:5000/api/tasks/${editTaskId}`, { title: editTaskTitle });
+            await fetchTasks();
+            setEditTaskId(null);
+            setEditTaskTitle("");
         } catch (err) {
             console.error("Error saving task:", err);
             setError(`Error saving task: ${err.message}`);
+        } finally {
+            setIsSaving(false);
         }
     };
 
@@ -124,7 +110,7 @@ const TaskList = () => {
     };
 
     const inspectTask = (task) => {
-        alert(`Task ID: ${task._id || task.id}\nTitle: ${task.title}\nFull object: ${JSON.stringify(task)}`);
+        console.table(task);
     };
 
     return (
@@ -132,26 +118,13 @@ const TaskList = () => {
             <h2>Task Manager</h2>
 
             {error && (
-                <div style={{
-                    backgroundColor: '#ffebee',
-                    color: '#c62828',
-                    padding: '10px',
-                    borderRadius: '4px',
-                    marginBottom: '10px'
-                }}>
+                <div style={{ backgroundColor: '#ffebee', color: '#c62828', padding: '10px', borderRadius: '4px', marginBottom: '10px' }}>
                     {error}
                 </div>
             )}
 
             {taskDetails && (
-                <div style={{
-                    backgroundColor: '#e8f5e9',
-                    color: '#2e7d32',
-                    padding: '10px',
-                    borderRadius: '4px',
-                    marginBottom: '10px',
-                    fontSize: '12px'
-                }}>
+                <div style={{ backgroundColor: '#e8f5e9', color: '#2e7d32', padding: '10px', borderRadius: '4px', marginBottom: '10px', fontSize: '12px' }}>
                     {taskDetails}
                 </div>
             )}
@@ -163,119 +136,60 @@ const TaskList = () => {
                     value={newTask}
                     onChange={(e) => setNewTask(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && addTask()}
-                    style={{
-                        padding: '8px',
-                        width: '70%',
-                        marginRight: '10px',
-                        borderRadius: '4px',
-                        border: '1px solid #ccc'
-                    }}
+                    style={{ padding: '8px', width: '70%', marginRight: '10px', borderRadius: '4px', border: '1px solid #ccc' }}
                 />
                 <button
                     onClick={addTask}
-                    style={{
-                        padding: '8px 16px',
-                        backgroundColor: '#4caf50',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '4px',
-                        cursor: 'pointer'
-                    }}
+                    disabled={isLoading}
+                    style={{ padding: '8px 16px', backgroundColor: '#4caf50', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', opacity: isLoading ? 0.7 : 1 }}
                 >
-                    Add
+                    {isLoading ? "Adding..." : "Add"}
                 </button>
             </div>
 
             {editTaskId && (
-                <div style={{
-                    marginBottom: '20px',
-                    padding: '15px',
-                    backgroundColor: '#f5f5f5',
-                    borderRadius: '4px'
-                }}>
+                <div style={{ marginBottom: '20px', padding: '15px', backgroundColor: '#f5f5f5', borderRadius: '4px' }}>
                     <input
                         type="text"
                         value={editTaskTitle}
                         onChange={(e) => setEditTaskTitle(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && saveEditTask()}
-                        style={{
-                            padding: '8px',
-                            width: '70%',
-                            marginRight: '10px',
-                            borderRadius: '4px',
-                            border: '1px solid #ccc'
-                        }}
+                        style={{ padding: '8px', width: '70%', marginRight: '10px', borderRadius: '4px', border: '1px solid #ccc' }}
                     />
                     <button
                         onClick={saveEditTask}
-                        style={{
-                            padding: '8px 16px',
-                            backgroundColor: '#2196f3',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '4px',
-                            marginRight: '10px',
-                            cursor: 'pointer'
-                        }}
+                        disabled={isSaving}
+                        style={{ padding: '8px 16px', backgroundColor: '#2196f3', color: 'white', border: 'none', borderRadius: '4px', marginRight: '10px', cursor: 'pointer', opacity: isSaving ? 0.7 : 1 }}
                     >
-                        Save
+                        {isSaving ? "Saving..." : "Save"}
                     </button>
                     <button
                         onClick={cancelEdit}
-                        style={{
-                            padding: '8px 16px',
-                            backgroundColor: '#f44336',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '4px',
-                            cursor: 'pointer'
-                        }}
+                        style={{ padding: '8px 16px', backgroundColor: '#f44336', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
                     >
                         Cancel
                     </button>
                 </div>
             )}
 
-            <ul style={{
-                listStyleType: 'none',
-                padding: 0
-            }}>
+            <ul style={{ listStyleType: 'none', padding: 0 }}>
                 {tasks.length > 0 ? (
                     tasks.map((task) => {
                         const taskId = task._id || task.id;
                         return (
-                            <li key={taskId} style={{
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'center',
-                                padding: '12px',
-                                borderBottom: '1px solid #eee',
-                                backgroundColor: editTaskId === taskId ? '#e3f2fd' : 'transparent'
-                            }}>
+                            <li key={taskId} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', borderBottom: '1px solid #eee', backgroundColor: editTaskId === taskId ? '#e3f2fd' : 'transparent' }}>
                                 <span>{task.title}</span>
                                 <div>
                                     <button
                                         onClick={() => inspectTask(task)}
-                                        style={{
-                                            marginRight: '5px',
-                                            background: 'none',
-                                            border: 'none',
-                                            cursor: 'pointer',
-                                            fontSize: '16px'
-                                        }}
+                                        style={{ marginRight: '5px', background: 'none', border: 'none', cursor: 'pointer', fontSize: '16px' }}
                                         title="Inspect task details"
                                     >
                                         🔍
                                     </button>
                                     <button
                                         onClick={() => startEditTask(task)}
-                                        style={{
-                                            marginRight: '5px',
-                                            background: 'none',
-                                            border: 'none',
-                                            cursor: 'pointer',
-                                            fontSize: '16px'
-                                        }}
+                                        style={{ marginRight: '5px', background: 'none', border: 'none', cursor: 'pointer', fontSize: '16px' }}
                                     >
                                         ✏️
                                     </button>
@@ -285,12 +199,7 @@ const TaskList = () => {
                                                 deleteTask(taskId);
                                             }
                                         }}
-                                        style={{
-                                            background: 'none',
-                                            border: 'none',
-                                            cursor: 'pointer',
-                                            fontSize: '16px'
-                                        }}
+                                        style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '16px' }}
                                     >
                                         ❌
                                     </button>
@@ -299,11 +208,7 @@ const TaskList = () => {
                         );
                     })
                 ) : (
-                    <li style={{
-                        padding: '15px',
-                        textAlign: 'center',
-                        color: '#757575'
-                    }}>
+                    <li style={{ padding: '15px', textAlign: 'center', color: '#757575' }}>
                         No tasks available
                     </li>
                 )}
@@ -312,30 +217,16 @@ const TaskList = () => {
             <div style={{ marginTop: '20px' }}>
                 <button
                     onClick={() => console.log("Current tasks:", tasks)}
-                    style={{
-                        padding: '8px 16px',
-                        backgroundColor: '#9e9e9e',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '4px',
-                        cursor: 'pointer',
-                        marginRight: '10px'
-                    }}
+                    style={{ padding: '8px 16px', backgroundColor: '#9e9e9e', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', marginRight: '10px' }}
                 >
                     Debug: Log Tasks
                 </button>
                 <button
-                    onClick={() => fetchTasks()}
-                    style={{
-                        padding: '8px 16px',
-                        backgroundColor: '#fbc02d',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '4px',
-                        cursor: 'pointer'
-                    }}
+                    onClick={fetchTasks}
+                    disabled={isLoading}
+                    style={{ padding: '8px 16px', backgroundColor: '#fbc02d', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', opacity: isLoading ? 0.7 : 1 }}
                 >
-                    Refresh Tasks
+                    {isLoading ? "Refreshing..." : "Refresh Tasks"}
                 </button>
             </div>
         </div>
