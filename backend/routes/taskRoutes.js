@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const Task = require("../models/tasks");
+const Task = require("../models/task");
 
 // Create Task
 router.post("/tasks", async (req, res) => {
@@ -27,6 +27,9 @@ router.get("/tasks", async (req, res) => {
 router.put("/tasks/:id", async (req, res) => {
     try {
         const updatedTask = await Task.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        if (!updatedTask) {
+            return res.status(404).json({ message: "Task not found" });
+        }
         res.json(updatedTask);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -36,7 +39,10 @@ router.put("/tasks/:id", async (req, res) => {
 // Delete Task
 router.delete("/tasks/:id", async (req, res) => {
     try {
-        await Task.findByIdAndDelete(req.params.id);
+        const deletedTask = await Task.findByIdAndDelete(req.params.id);
+        if (!deletedTask) {
+            return res.status(404).json({ message: "Task not found" });
+        }
         res.json({ message: "Task deleted" });
     } catch (err) {
         res.status(500).json({ error: err.message });
