@@ -54,8 +54,12 @@ const TaskList = () => {
         if (window.confirm("Are you sure you want to delete this task?")) {
             try {
                 setError(null);
+                console.log("Deleting task with ID:", id); // Debugging log
                 await axios.delete(`${API_URL}/${id}`);
-                setTasks(tasks.filter((task) => task._id !== id)); // Remove the task from the local state
+                console.log("Task deleted:", id); // Debugging log
+                const updatedTasks = tasks.filter((task) => task._id !== id);
+                console.log("Updated tasks:", updatedTasks); // Debugging log
+                setTasks(updatedTasks); // Update local state
             } catch (err) {
                 console.error("Error deleting task:", err);
                 setError(`Error deleting task: ${err.message}`);
