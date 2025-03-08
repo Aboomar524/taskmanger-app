@@ -1,136 +1,104 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 
+const API_URL = "https://taskmanger-app.onrender.com/api/tasks";
+
 const TaskList = () => {
     const [tasks, setTasks] = useState([]);
     const [newTask, setNewTask] = useState("");
     const [editTaskId, setEditTaskId] = useState(null);
     const [editTaskTitle, setEditTaskTitle] = useState("");
     const [error, setError] = useState(null);
-    const [taskDetails, setTaskDetails] = useState(null);
+    const [loading, setLoading] = useState(false);
 
+    // Fetch tasks on component mount
     useEffect(() => {
         fetchTasks();
     }, []);
 
+    // Fetch tasks from the backend
     const fetchTasks = async () => {
         try {
+            setLoading(true);
             setError(null);
-            const res = await axios.get("https:taskmanger-app.onrender.com/api/tasks");
+            const res = await axios.get(API_URL);
             setTasks(res.data);
-
-            // Log task structure to help diagnose the issue
-            if (res.data && res.data.length > 0) {
-                const sampleTask = res.data[0];
-                console.log("Sample task structure:", sampleTask);
-                setTaskDetails(`Task structure: ID type: ${typeof sampleTask._id}, ID value: ${sampleTask._id}`);
-            }
         } catch (err) {
             console.error("Error fetching tasks:", err);
             setError(`Error fetching tasks: ${err.message}`);
+        } finally {
+            setLoading(false);
         }
     };
 
+    // Add a new task
     const addTask = async () => {
         if (!newTask.trim()) return;
         try {
             setError(null);
-            const response = await axios.post("http://localhost:5000/api/tasks", { title: newTask });
-            await fetchTasks();  // Refresh task list after adding
-            setNewTask("");  // Clear input after adding task
+            const response = await axios.post(API_URL, { title: newTask });
+            setTasks([...tasks, response.data]); // Add the new task to the local state
+            setNewTask(""); // Clear the input field
         } catch (err) {
             console.error("Error adding task:", err);
             setError(`Error adding task: ${err.message}`);
         }
     };
 
+    // Delete a task
     const deleteTask = async (id) => {
         if (!id) {
             setError("Cannot delete: Missing task ID");
             return;
         }
-
-        try {
-            setError(null);
-            console.log(`Attempting to delete task with ID: ${id}`);
-
-            const response = await axios.delete(`http://localhost:5000/api/tasks/${id}`, {
-                validateStatus: function (status) {
-                    return true;  // Prevent Axios from throwing an error
-                }
-            });
-
-            console.log("Delete response:", response);
-
-            if (response.status === 500) {
-                setError("Server error (500) when deleting. Check if ID format is correct.");
-            } else if (response.status >= 400) {
-                setError(`Error (${response.status}) when deleting: ${response.data.message || 'Unknown error'}`);
-            } else {
-                await fetchTasks();  // Refresh task list after deletion
+        if (window.confirm("Are you sure you want to delete this task?")) {
+            try {
+                setError(null);
+                await axios.delete(`${API_URL}/${id}`);
+                setTasks(tasks.filter((task) => task._id !== id)); // Remove the task from the local state
+            } catch (err) {
+                console.error("Error deleting task:", err);
+                setError(`Error deleting task: ${err.message}`);
             }
-        } catch (err) {
-            console.error("Error deleting task:", err);
-            setError(`Error deleting task: ${err.message}`);
         }
     };
 
+    // Start editing a task
     const startEditTask = (task) => {
-        const taskId = task._id || task.id;
-        if (!taskId) {
-            setError("Cannot edit: Task ID not found");
-            return;
-        }
-
-        setEditTaskId(taskId);
-        setEditTaskTitle(task.title || "");
+        setEditTaskId(task._id);
+        setEditTaskTitle(task.title);
     };
 
+    // Save the edited task
     const saveEditTask = async () => {
         if (!editTaskTitle.trim()) return;
         if (!editTaskId) {
             setError("Cannot save edit: Missing task ID");
             return;
         }
-
         try {
             setError(null);
-            console.log(`Updating task with ID: ${editTaskId}`);
-
-            const response = await axios.put(`http://localhost:5000/api/tasks/${editTaskId}`, {
-                title: editTaskTitle
-            });
-
-            console.log("Update response:", response);
-
-            if (response.status === 500) {
-                setError("Server error (500) when updating.");
-            } else if (response.status >= 400) {
-                setError(`Error (${response.status}) when updating: ${response.data.message || 'Unknown error'}`);
-            } else {
-                await fetchTasks();  // Refresh task list after update
-                setEditTaskId(null);  // Clear edit task state
-                setEditTaskTitle("");  // Clear edit task input
-            }
+            const response = await axios.put(`${API_URL}/${editTaskId}`, { title: editTaskTitle });
+            setTasks(tasks.map((task) => (task._id === editTaskId ? { ...task, title: editTaskTitle } : task))); // Update the task in the local state
+            setEditTaskId(null); // Clear edit mode
+            setEditTaskTitle(""); // Clear the edit input field
         } catch (err) {
             console.error("Error saving task:", err);
             setError(`Error saving task: ${err.message}`);
         }
     };
 
+    // Cancel editing a task
     const cancelEdit = () => {
         setEditTaskId(null);
         setEditTaskTitle("");
-    };
-
-    const inspectTask = (task) => {
-        alert(`Task ID: ${task._id || task.id}\nTitle: ${task.title}\nFull object: ${JSON.stringify(task)}`);
     };
 
     return (
         <div className="task-manager" style={{ fontFamily: 'Arial, sans-serif', maxWidth: '800px', margin: '0 auto' }}>
             <h2>Task Manager</h2>
 
+            {/* Error message */}
             {error && (
                 <div style={{
                     backgroundColor: '#ffebee',
@@ -143,19 +111,7 @@ const TaskList = () => {
                 </div>
             )}
 
-            {taskDetails && (
-                <div style={{
-                    backgroundColor: '#e8f5e9',
-                    color: '#2e7d32',
-                    padding: '10px',
-                    borderRadius: '4px',
-                    marginBottom: '10px',
-                    fontSize: '12px'
-                }}>
-                    {taskDetails}
-                </div>
-            )}
-
+            {/* Add task input */}
             <div style={{ marginBottom: '20px' }}>
                 <input
                     type="text"
@@ -186,6 +142,7 @@ const TaskList = () => {
                 </button>
             </div>
 
+            {/* Edit task input (shown when editing) */}
             {editTaskId && (
                 <div style={{
                     marginBottom: '20px',
@@ -236,37 +193,26 @@ const TaskList = () => {
                 </div>
             )}
 
-            <ul style={{
-                listStyleType: 'none',
-                padding: 0
-            }}>
-                {tasks.length > 0 ? (
-                    tasks.map((task) => {
-                        const taskId = task._id || task.id;
-                        return (
-                            <li key={taskId} style={{
+            {/* Task list */}
+            {loading ? (
+                <p>Loading tasks...</p>
+            ) : (
+                <ul style={{
+                    listStyleType: 'none',
+                    padding: 0
+                }}>
+                    {tasks.length > 0 ? (
+                        tasks.map((task) => (
+                            <li key={task._id} style={{
                                 display: 'flex',
                                 justifyContent: 'space-between',
                                 alignItems: 'center',
                                 padding: '12px',
                                 borderBottom: '1px solid #eee',
-                                backgroundColor: editTaskId === taskId ? '#e3f2fd' : 'transparent'
+                                backgroundColor: editTaskId === task._id ? '#e3f2fd' : 'transparent'
                             }}>
                                 <span>{task.title}</span>
                                 <div>
-                                    <button
-                                        onClick={() => inspectTask(task)}
-                                        style={{
-                                            marginRight: '5px',
-                                            background: 'none',
-                                            border: 'none',
-                                            cursor: 'pointer',
-                                            fontSize: '16px'
-                                        }}
-                                        title="Inspect task details"
-                                    >
-                                        🔍
-                                    </button>
                                     <button
                                         onClick={() => startEditTask(task)}
                                         style={{
@@ -282,7 +228,7 @@ const TaskList = () => {
                                     <button
                                         onClick={() => {
                                             if (window.confirm(`Are you sure you want to delete "${task.title}"?`)) {
-                                                deleteTask(taskId);
+                                                deleteTask(task._id);
                                             }
                                         }}
                                         style={{
@@ -296,19 +242,20 @@ const TaskList = () => {
                                     </button>
                                 </div>
                             </li>
-                        );
-                    })
-                ) : (
-                    <li style={{
-                        padding: '15px',
-                        textAlign: 'center',
-                        color: '#757575'
-                    }}>
-                        No tasks available
-                    </li>
-                )}
-            </ul>
+                        ))
+                    ) : (
+                        <li style={{
+                            padding: '15px',
+                            textAlign: 'center',
+                            color: '#757575'
+                        }}>
+                            No tasks available
+                        </li>
+                    )}
+                </ul>
+            )}
 
+            {/* Debug and refresh buttons */}
             <div style={{ marginTop: '20px' }}>
                 <button
                     onClick={() => console.log("Current tasks:", tasks)}
@@ -325,7 +272,7 @@ const TaskList = () => {
                     Debug: Log Tasks
                 </button>
                 <button
-                    onClick={() => fetchTasks()}
+                    onClick={fetchTasks}
                     style={{
                         padding: '8px 16px',
                         backgroundColor: '#fbc02d',
