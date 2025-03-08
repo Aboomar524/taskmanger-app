@@ -16,7 +16,7 @@ const TaskList = () => {
     const fetchTasks = async () => {
         try {
             setError(null);
-            const res = await axios.get("http:taskmanger-app.onrender.com/api/tasks");
+            const res = await axios.get("https:taskmanger-app.onrender.com/api/tasks");
             setTasks(res.data);
 
             // Log task structure to help diagnose the issue
