@@ -14,14 +14,14 @@ const corsOptions = {
     origin: process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : '*',
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true, // إذا كنت تستخدم الكوكيز أو الجلسات
+    credentials: true,
     optionsSuccessStatus: 200
 };
 app.use(cors(corsOptions));
 
 // Middleware
 app.use(express.json());
-app.use(express.urlencoded({ extended: true })); // For parsing application/x-www-form-urlencoded
+app.use(express.urlencoded({ extended: true }));
 
 // MongoDB connection with retry logic
 const MAX_RETRIES = 5;
@@ -49,8 +49,9 @@ connectDB();
 const taskRoutes = require("./routes/taskRoutes");
 app.use("/api", taskRoutes);
 
+// === ➤ التعديل المطلوب للواجب (Primitive Route)
 app.get("/", (req, res) => {
-    res.send("Welcome to the Task Manager API!");
+    res.send("<h1>Welcome to Task Manager App</h1>");
 });
 
 // Serve static files (if needed)
