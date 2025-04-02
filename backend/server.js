@@ -51,7 +51,8 @@ const users = [
     {
         username: "web215user",
         // Hashed version of 'LetMeIn!' generated using bcrypt
-        password: "$2b$10$3oZf1lveB7q8dZkzXvrqOVxUFN4jQ1hoIGg1rsSO66RtUgI8CxQW",
+        password: "$2b$10$N0qQiaxea.oAt/OcksJtreE3An1eRafY.R5zWMHtHlrAGI3QcZjjy
+",
     },
 ];
 
