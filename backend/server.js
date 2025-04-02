@@ -50,7 +50,8 @@ connectDB();
 const users = [
     {
         username: "web215user",
-        password: "$2b$10$1SntQry/zVK.NGMHUxJ9m.NJrGaaJEG8kabSjnA3CcgBWeU1P7MS4", // Hashed version of 'LetMeIn!'
+        // Hashed version of 'LetMeIn!' generated using bcrypt
+        password: "$2b$10$3oZf1lveB7q8dZkzXvrqOVxUFN4jQ1hoIGg1rsSO66RtUgI8CxQW",  // Use this hashed password
     },
 ];
 
