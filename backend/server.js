@@ -18,6 +18,34 @@ const corsOptions = {
     credentials: true,
     optionsSuccessStatus: 200
 };
+app.post("/api/login", async (req, res) => {
+    const { username, password } = req.body;
+
+    console.log("Received username:", username);  // سجل اسم المستخدم
+
+    const user = users.find((u) => u.username === username);
+
+    if (!user) {
+        console.log("User not found");
+        return res.status(401).json({ message: "Invalid credentials" });
+    }
+
+    // تحقق من كلمة المرور
+    const isMatch = await bcrypt.compare(password, user.password);
+    console.log("Password match:", isMatch);  // سجل إذا كانت كلمة المرور مطابقة
+
+    if (!isMatch) {
+        return res.status(401).json({ message: "Invalid credentials" });
+    }
+
+    // إذا تم التحقق بنجاح، يتم إنشاء التوكن
+    const token = jwt.sign({ username: user.username }, process.env.JWT_SECRET, {
+        expiresIn: "1h", // ينتهي التوكن بعد ساعة
+    });
+
+    res.json({ token });
+});
+
 app.use(cors(corsOptions));
 
 // Middleware
@@ -51,7 +79,7 @@ const users = [
     {
         username: "web215user",
         // Hashed version of 'LetMeIn!' generated using bcrypt
-        password: "$2b$10$3oZf1lveB7q8dZkzXvrqOVxUFN4jQ1hoIGg1rsSO66RtUgI8CxQW",
+        password: "$2b$10$N0qQiaxea.oAt/OcksJtreE3An1eRafY.R5zWMHtHlrAGI3QcZjjy",
     },
 ];
 
