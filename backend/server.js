@@ -1,8 +1,9 @@
 require("dotenv").config(); // Load environment variables
-
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
+const jwt = require("jsonwebtoken");
+const bcrypt = require("bcryptjs");
 const path = require("path");
 const fs = require("fs");
 
@@ -45,11 +46,66 @@ const connectDB = async () => {
 };
 connectDB();
 
-// Routes
+// Hardcoded user (in a real app, store in a database)
+const users = [
+    {
+        username: "web215user",
+        password: "$2a$10$Z1aBOETmd1mPfzMLwUBbKu5kzIEcv0y7hVY/FTwflwtxjwsZgKnHu", // Hashed version of 'LetMeIn!'
+    },
+];
+
+// JWT Authentication middleware
+const authenticate = (req, res, next) => {
+    const token = req.header("Authorization");
+
+    if (!token) {
+        return res.status(401).json({ message: "Access denied. No token provided." });
+    }
+
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        req.user = decoded;
+        next();
+    } catch (err) {
+        res.status(400).json({ message: "Invalid token" });
+    }
+};
+
+// Login route
+app.post("/api/login", async (req, res) => {
+    const { username, password } = req.body;
+
+    const user = users.find((u) => u.username === username);
+
+    if (!user) {
+        return res.status(401).json({ message: "Invalid credentials" });
+    }
+
+    // Check password
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if (!isMatch) {
+        return res.status(401).json({ message: "Invalid credentials" });
+    }
+
+    // Create JWT token
+    const token = jwt.sign({ username: user.username }, process.env.JWT_SECRET, {
+        expiresIn: "1h", // Token expires in 1 hour
+    });
+
+    res.json({ token });
+});
+
+// Example protected route
+app.get("/api/protected", authenticate, (req, res) => {
+    res.json({ message: "This is a protected route. You are authenticated!" });
+});
+
+// Routes for tasks (example)
 const taskRoutes = require("./routes/taskRoutes");
 app.use("/api", taskRoutes);
 
-// === ➤ التعديل المطلوب للواجب (Primitive Route)
+// === ➤ Primitive Route
 app.get("/", (req, res) => {
     res.send("<h1>Welcome to Task Manager App</h1>");
 });
