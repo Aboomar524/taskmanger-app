@@ -1,4 +1,4 @@
-// Import dependencies and set up your express server
+require("dotenv").config(); // Load environment variables
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
@@ -21,10 +21,10 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 // Middleware
-app.use(express.json());
+app.use(express.json());  // Middleware to parse JSON data
 app.use(express.urlencoded({ extended: true }));
 
-// MongoDB connection
+// MongoDB connection with retry logic
 const MAX_RETRIES = 5;
 let retryCount = 0;
 
@@ -46,11 +46,11 @@ const connectDB = async () => {
 };
 connectDB();
 
-// Hardcoded user (for testing purposes)
+// Hardcoded user (in a real app, store in a database)
 const users = [
     {
         username: "web215user",
-        password: "$2b$10$3oZf1lveB7q8dZkzXvrqOVxUFN4jQ1hoIGg1rsSO66RtUgI8CxQW",
+        password: "$2b$10$3oZf1lveB7q8dZkzXvrqOVxUFN4jQ1hoIGg1rsSO66RtUgI8CxQW", // Hashed version of 'LetMeIn!'
     },
 ];
 
@@ -105,7 +105,7 @@ app.get("/api/protected", authenticate, (req, res) => {
     res.json({ message: "This is a protected route. You are authenticated!" });
 });
 
-// Example routes for tasks
+// Routes for tasks (example)
 const taskRoutes = require("./routes/taskRoutes");
 app.use("/api", taskRoutes);
 
