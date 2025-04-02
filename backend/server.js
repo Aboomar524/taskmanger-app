@@ -1,4 +1,4 @@
-require("dotenv").config(); // Load environment variables
+// Import dependencies and set up your express server
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
@@ -18,41 +18,13 @@ const corsOptions = {
     credentials: true,
     optionsSuccessStatus: 200
 };
-app.post("/api/login", async (req, res) => {
-    const { username, password } = req.body;
-
-    console.log("Received username:", username);  // سجل اسم المستخدم
-
-    const user = users.find((u) => u.username === username);
-
-    if (!user) {
-        console.log("User not found");
-        return res.status(401).json({ message: "Invalid credentials" });
-    }
-
-    // تحقق من كلمة المرور
-    const isMatch = await bcrypt.compare(password, user.password);
-    console.log("Password match:", isMatch);  // سجل إذا كانت كلمة المرور مطابقة
-
-    if (!isMatch) {
-        return res.status(401).json({ message: "Invalid credentials" });
-    }
-
-    // إذا تم التحقق بنجاح، يتم إنشاء التوكن
-    const token = jwt.sign({ username: user.username }, process.env.JWT_SECRET, {
-        expiresIn: "1h", // ينتهي التوكن بعد ساعة
-    });
-
-    res.json({ token });
-});
-
 app.use(cors(corsOptions));
 
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// MongoDB connection with retry logic
+// MongoDB connection
 const MAX_RETRIES = 5;
 let retryCount = 0;
 
@@ -74,12 +46,11 @@ const connectDB = async () => {
 };
 connectDB();
 
-// Hardcoded user (in a real app, store in a database)
+// Hardcoded user (for testing purposes)
 const users = [
     {
         username: "web215user",
-        // Hashed version of 'LetMeIn!' generated using bcrypt
-        password: "$2b$10$N0qQiaxea.oAt/OcksJtreE3An1eRafY.R5zWMHtHlrAGI3QcZjjy",
+        password: "$2b$10$3oZf1lveB7q8dZkzXvrqOVxUFN4jQ1hoIGg1rsSO66RtUgI8CxQW",
     },
 ];
 
@@ -104,20 +75,24 @@ const authenticate = (req, res, next) => {
 app.post("/api/login", async (req, res) => {
     const { username, password } = req.body;
 
+    console.log("Received username:", username);  // Log the username
+
     const user = users.find((u) => u.username === username);
 
     if (!user) {
+        console.log("User not found");
         return res.status(401).json({ message: "Invalid credentials" });
     }
 
     // Check password
     const isMatch = await bcrypt.compare(password, user.password);
+    console.log("Password match:", isMatch);  // Log the result of the password check
 
     if (!isMatch) {
         return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    // Create JWT token
+    // If credentials are correct, create the JWT token
     const token = jwt.sign({ username: user.username }, process.env.JWT_SECRET, {
         expiresIn: "1h", // Token expires in 1 hour
     });
@@ -130,16 +105,16 @@ app.get("/api/protected", authenticate, (req, res) => {
     res.json({ message: "This is a protected route. You are authenticated!" });
 });
 
-// Routes for tasks (example)
+// Example routes for tasks
 const taskRoutes = require("./routes/taskRoutes");
 app.use("/api", taskRoutes);
 
-// === ➤ Primitive Route
+// Root route
 app.get("/", (req, res) => {
     res.send("<h1>Welcome to Task Manager App</h1>");
 });
 
-// Serve static files (if needed)
+// Serve static files (if any)
 const publicPath = path.resolve(__dirname, "public");
 if (fs.existsSync(publicPath)) {
     app.use(express.static(publicPath));
