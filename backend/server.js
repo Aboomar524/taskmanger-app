@@ -50,7 +50,7 @@ connectDB();
 const users = [
     {
         username: "web215user",
-        password: "$2b$10$7MZ14Rd1fmjR7j10T33aU.dfXV5UHtUOCCspmNDUoV/N3iqeK3yK", // كلمة المرور الجديدة المشفرة
+        password: "$2b$10$xXRggQfWYTEH/rM4usPp6uvt81EsO6K1tfb1JMz6oPnpN42fO6wAq", // كلمة المرور الجديدة المشفرة
     },
 ];
 
