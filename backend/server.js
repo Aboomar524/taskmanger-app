@@ -50,10 +50,10 @@ connectDB();
 const users = [
     {
         username: "web215user",
-        // Hashed version of 'LetMeIn!' generated using bcrypt
-        password: "$2b$10$3oZf1lveB7q8dZkzXvrqOVxUFN4jQ1hoIGg1rsSO66RtUgI8CxQW",  // Use this hashed password
+        password: "$2b$10$7MZ14Rd1fmjR7j10T33aU.dfXV5UHtUOCCspmNDUoV/N3iqeK3yK", // كلمة المرور الجديدة المشفرة
     },
 ];
+
 
 // JWT Authentication middleware
 const authenticate = (req, res, next) => {
