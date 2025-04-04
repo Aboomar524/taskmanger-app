@@ -50,24 +50,29 @@ connectDB();
 const users = [
     {
         username: "web215user",
-        password: "$2b$10$xXRggQfWYTEH/rM4usPp6uvt81EsO6K1tfb1JMz6oPnpN42fO6wAq", // كلمة المرور الجديدة المشفرة
+        password: "$2b$10$xXRggQfWYTEH/rM4usPp6uvt81EsO6K1tfb1JMz6oPnpN42fO6wAq", // كلمة المرور المشفرة
     },
 ];
 
 
-// JWT Authentication middleware
+// JWT Authentication middleware - UPDATED to handle Bearer token
 const authenticate = (req, res, next) => {
-    const token = req.header("Authorization");
+    const authHeader = req.header("Authorization");
 
-    if (!token) {
+    if (!authHeader) {
         return res.status(401).json({ message: "Access denied. No token provided." });
     }
+
+    // Extract token from header (remove "Bearer " if present)
+    const token = authHeader.startsWith('Bearer ') ?
+        authHeader.substring(7) : authHeader;
 
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         req.user = decoded;
         next();
     } catch (err) {
+        console.error("Token verification error:", err.message);
         res.status(400).json({ message: "Invalid token" });
     }
 };
@@ -103,7 +108,10 @@ app.post("/api/login", async (req, res) => {
 
 // Example protected route
 app.get("/api/protected", authenticate, (req, res) => {
-    res.json({ message: "This is a protected route. You are authenticated!" });
+    res.json({
+        message: "This is a protected route. You are authenticated!",
+        user: req.user.username
+    });
 });
 
 // Routes for tasks (example)
