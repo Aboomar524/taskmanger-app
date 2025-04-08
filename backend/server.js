@@ -54,7 +54,6 @@ const users = [
     },
 ];
 
-
 // JWT Authentication middleware - UPDATED to handle Bearer token
 const authenticate = (req, res, next) => {
     const authHeader = req.header("Authorization");
@@ -81,18 +80,14 @@ const authenticate = (req, res, next) => {
 app.post("/api/login", async (req, res) => {
     const { username, password } = req.body;
 
-    console.log("Received username:", username);  // Log the username
-
     const user = users.find((u) => u.username === username);
 
     if (!user) {
-        console.log("User not found");
         return res.status(401).json({ message: "Invalid credentials" });
     }
 
     // Check password
     const isMatch = await bcrypt.compare(password, user.password);
-    console.log("Password match:", isMatch);  // Log the result of the password check
 
     if (!isMatch) {
         return res.status(401).json({ message: "Invalid credentials" });
@@ -138,6 +133,25 @@ app.use((err, req, res, next) => {
         message: 'Something broke!',
         error: process.env.NODE_ENV === 'development' ? err.message : 'Internal Server Error'
     });
+});
+
+// **مسار تسجيل مستخدم جديد**
+app.post("/signup", async (req, res) => {
+    const { username, password } = req.body;
+
+    // تحقق من وجود اسم المستخدم في قاعدة البيانات (أو المصفوفة هنا للتجربة)
+    if (users.some(user => user.username === username)) {
+        return res.status(400).json({ success: false, message: "Username already exists!" });
+    }
+
+    // تشفير كلمة المرور
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // إضافة المستخدم إلى "قاعدة البيانات" (هنا في المصفوفة فقط للتجربة)
+    users.push({ username, password: hashedPassword });
+
+    // إرسال استجابة ناجحة
+    res.status(200).json({ success: true, message: "Account created successfully!" });
 });
 
 // Start Server
