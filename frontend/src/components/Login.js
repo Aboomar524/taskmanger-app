@@ -1,28 +1,24 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom"; // لإعادة التوجيه بعد تسجيل الدخول
 
-const Signup = () => {
+const Login = () => {
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
-    const [confirmPassword, setConfirmPassword] = useState("");
     const [message, setMessage] = useState("");
+    const navigate = useNavigate();  // لتمكين التوجيه بعد تسجيل الدخول
 
     const handleSubmit = async (e) => {
         e.preventDefault();
 
         // التحقق من صحة النموذج
-        if (!username || !password || !confirmPassword) {
+        if (!username || !password) {
             setMessage("Please fill out all fields!");
             return;
         }
 
-        if (password !== confirmPassword) {
-            setMessage("Passwords do not match!");
-            return;
-        }
-
-        // إرسال البيانات إلى الخادم باستخدام fetch
+        // إرسال بيانات تسجيل الدخول إلى الخادم باستخدام fetch
         try {
-            const response = await fetch("http://127.0.0.1:5000/signup", {
+            const response = await fetch("http://127.0.0.1:5000/api/login", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -35,14 +31,14 @@ const Signup = () => {
 
             const data = await response.json();
 
-            if (data.success) {
-                setMessage("Account created successfully! Please log in.");
-                // إعادة التوجيه إلى صفحة تسجيل الدخول
-                setTimeout(() => {
-                    window.location.href = "/login";  // التوجيه إلى صفحة تسجيل الدخول
-                }, 2000); // التأخير لمدة ثانيتين قبل التوجيه
+            if (data.token) {
+                // إذا كانت الاستجابة تحتوي على التوكن، نحتفظ به في التخزين المحلي
+                localStorage.setItem("token", data.token);
+
+                // إعادة التوجيه إلى صفحة التطبيق (صفحة المهام)
+                navigate("/tasks");  // توجيه المستخدم إلى صفحة المهام
             } else {
-                setMessage(data.message || "Error creating account!");
+                setMessage(data.message || "Invalid credentials!");
             }
         } catch (error) {
             console.error("Error details:", error);
@@ -51,8 +47,8 @@ const Signup = () => {
     };
 
     return (
-        <div className="signup-container">
-            <h2>Signup</h2>
+        <div className="login-container">
+            <h2>Login</h2>
             <form onSubmit={handleSubmit}>
                 <label htmlFor="username">Username:</label>
                 <input
@@ -72,20 +68,11 @@ const Signup = () => {
                     required
                 />
                 <br />
-                <label htmlFor="confirmPassword">Confirm Password:</label>
-                <input
-                    type="password"
-                    id="confirmPassword"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    required
-                />
-                <br />
-                <button type="submit">Sign Up</button>
+                <button type="submit">Login</button>
             </form>
             {message && <p className="error-message">{message}</p>}
         </div>
     );
 };
 
-export default Signup;
+export default Login;

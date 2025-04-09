@@ -21,21 +21,6 @@ const corsOptions = {
 };
 app.use(cors(corsOptions));
 
-// Add explicit preflight handling
-app.options('*', cors(corsOptions));
-
-// Additional CORS header fallback
-app.use((req, res, next) => {
-    res.header("Access-Control-Allow-Origin", req.headers.origin || "*");
-    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
-    res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-    res.header("Access-Control-Allow-Credentials", "true");
-    if (req.method === 'OPTIONS') {
-        return res.status(200).end();
-    }
-    next();
-});
-
 // Middleware
 app.use(express.json());  // Middleware to parse JSON data
 app.use(express.urlencoded({ extended: true }));
@@ -62,13 +47,11 @@ const connectDB = async () => {
 };
 connectDB();
 
-// Hardcoded user (in a real app, store in a database)
-const users = [
-    {
-        username: "web215user",
-        password: "$2b$10$xXRggQfWYTEH/rM4usPp6uvt81EsO6K1tfb1JMz6oPnpN42fO6wAq", // كلمة المرور المشفرة
-    },
-];
+// User model
+const User = mongoose.model('User', new mongoose.Schema({
+    username: { type: String, required: true, unique: true },
+    password: { type: String, required: true },
+}));
 
 // JWT Authentication middleware - UPDATED to handle Bearer token
 const authenticate = (req, res, next) => {
@@ -96,7 +79,7 @@ const authenticate = (req, res, next) => {
 app.post("/api/login", async (req, res) => {
     const { username, password } = req.body;
 
-    const user = users.find((u) => u.username === username);
+    const user = await User.findOne({ username });
 
     if (!user) {
         return res.status(401).json({ message: "Invalid credentials" });
@@ -117,7 +100,7 @@ app.post("/api/login", async (req, res) => {
     res.json({ token });
 });
 
-// Example protected route
+// Protected route
 app.get("/api/protected", authenticate, (req, res) => {
     res.json({
         message: "This is a protected route. You are authenticated!",
@@ -125,49 +108,29 @@ app.get("/api/protected", authenticate, (req, res) => {
     });
 });
 
-// Routes for tasks (example)
-const taskRoutes = require("./routes/taskRoutes");
-app.use("/api", taskRoutes);
-
-// Root route
-app.get("/", (req, res) => {
-    res.send("<h1>Welcome to Task Manager App</h1>");
-});
-
-// Serve static files (if any)
-const publicPath = path.resolve(__dirname, "public");
-if (fs.existsSync(publicPath)) {
-    app.use(express.static(publicPath));
-} else {
-    console.warn("⚠️ Public folder not found. Static files will not be served.");
-}
-
-// Error handling middleware
-app.use((err, req, res, next) => {
-    console.error(err.stack);
-    res.status(500).json({
-        message: 'Something broke!',
-        error: process.env.NODE_ENV === 'development' ? err.message : 'Internal Server Error'
-    });
-});
-
-// **مسار تسجيل مستخدم جديد**
+// Sign Up route
 app.post("/signup", async (req, res) => {
     const { username, password } = req.body;
 
-    // تحقق من وجود اسم المستخدم في قاعدة البيانات (أو المصفوفة هنا للتجربة)
-    if (users.some(user => user.username === username)) {
+    // Check if the username already exists
+    const existingUser = await User.findOne({ username });
+    if (existingUser) {
         return res.status(400).json({ success: false, message: "Username already exists!" });
     }
 
-    // تشفير كلمة المرور
+    // Encrypt password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // إضافة المستخدم إلى "قاعدة البيانات" (هنا في المصفوفة فقط للتجربة)
-    users.push({ username, password: hashedPassword });
+    // Create a new user
+    const user = new User({ username, password: hashedPassword });
 
-    // إرسال استجابة ناجحة
-    res.status(200).json({ success: true, message: "Account created successfully!" });
+    try {
+        await user.save();
+        res.status(200).json({ success: true, message: "Account created successfully!" });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, message: "Error creating account!" });
+    }
 });
 
 // Start Server
