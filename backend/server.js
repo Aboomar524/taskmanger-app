@@ -12,7 +12,7 @@ const PORT = process.env.PORT || 5000;
 
 // Enhanced CORS configuration
 const corsOptions = {
-    origin: ['http://localhost:3000', 'http://localhost:3001', 'https://taskmanager-app.onrender.com', 'https://taskmanager-app.onrender.com:*'],
+    origin: ['http://localhost:3000', 'http://localhost:3001', 'https://taskmanger-app-1.onrender.com/', 'https://taskmanger-app-1.onrender.com'],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
     exposedHeaders: ['Access-Control-Allow-Origin', 'Access-Control-Allow-Credentials'],
