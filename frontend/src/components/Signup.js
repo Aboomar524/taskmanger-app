@@ -1,10 +1,12 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom"; // استخدم useNavigate للتوجيه
 
 const Signup = () => {
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
     const [message, setMessage] = useState("");
+    const navigate = useNavigate();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -37,10 +39,9 @@ const Signup = () => {
 
             if (data.success) {
                 setMessage("Account created successfully! Please log in.");
-                // إعادة التوجيه إلى صفحة تسجيل الدخول
                 setTimeout(() => {
-                    window.location.href = "/login";  // التوجيه إلى صفحة تسجيل الدخول
-                }, 2000); // التأخير لمدة ثانيتين قبل التوجيه
+                    navigate("/login"); // التوجيه إلى صفحة تسجيل الدخول بعد فترة قصيرة
+                }, 2000);
             } else {
                 setMessage(data.message || "Error creating account!");
             }
@@ -83,7 +84,7 @@ const Signup = () => {
                 <br />
                 <button type="submit">Sign Up</button>
             </form>
-            {message && <p className="error-message">{message}</p>}
+            {message && <p>{message}</p>}
         </div>
     );
 };

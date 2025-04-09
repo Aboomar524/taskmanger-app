@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom"; // استخدم useNavigate للتوجيه
+import { useNavigate } from "react-router-dom";  // استخدم useNavigate للتوجيه
 
 const Login = () => {
     const [username, setUsername] = useState("");

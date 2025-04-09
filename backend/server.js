@@ -12,13 +12,15 @@ const PORT = process.env.PORT || 5000;
 
 // Enhanced CORS configuration
 const corsOptions = {
-    origin: ['http://localhost:3000', 'http://localhost:3001', 'https://taskmanger-app-1.onrender.com/', 'https://taskmanger-app-1.onrender.com'],
+    origin: ['http://localhost:3000', 'https://taskmanger-app-1.onrender.com'],  // Ensure this includes the frontend domain
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
     exposedHeaders: ['Access-Control-Allow-Origin', 'Access-Control-Allow-Credentials'],
     credentials: true,
     optionsSuccessStatus: 200
 };
+
+// Enable CORS with options
 app.use(cors(corsOptions));
 
 // Middleware
@@ -53,7 +55,7 @@ const User = mongoose.model('User', new mongoose.Schema({
     password: { type: String, required: true },
 }));
 
-// JWT Authentication middleware - UPDATED to handle Bearer token
+// JWT Authentication middleware
 const authenticate = (req, res, next) => {
     const authHeader = req.header("Authorization");
 
