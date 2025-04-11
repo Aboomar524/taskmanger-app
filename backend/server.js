@@ -9,7 +9,18 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // إعداد CORS كما هو مطلوب
-app.use(cors());
+const corsOptions = {
+    origin: [
+        "http://localhost:3000",
+        "https://taskmanger-app-1.onrender.com"
+    ],
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    allowedHeaders: ["Content-Type"],
+    credentials: true
+};
+
+app.use(cors(corsOptions));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
