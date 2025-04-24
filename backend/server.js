@@ -1,4 +1,3 @@
-
 require("dotenv").config();
 const express = require("express");
 const mongoose = require("mongoose");
@@ -7,28 +6,37 @@ const cors = require("cors");
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// إعداد CORS
+// ✅ إعداد CORS ديناميكي من .env
+const allowedOrigins = process.env.ALLOWED_ORIGINS.split(",");
+
 const corsOptions = {
-    origin: [
-        "http://localhost:3000",
-        "https://taskmanger-app-1.onrender.com"
-    ],
+    origin: function (origin, callback) {
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error("Not allowed by CORS"));
+        }
+    },
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type"],
     credentials: true
 };
+
 app.use(cors(corsOptions));
 app.use(express.json());
 
+// ✅ الاتصال بـ MongoDB
 mongoose.connect(process.env.MONGO_URI)
     .then(() => console.log("🚀 MongoDB Connected"))
     .catch((err) => console.error("❌ MongoDB Connection Error:", err));
 
+// ✅ نموذج المهام
 const Task = mongoose.model("Task", new mongoose.Schema({
     title: { type: String, required: true },
     completed: { type: Boolean, default: false }
 }));
 
+// ✅ Routes
 app.get("/api/tasks", async (req, res) => {
     try {
         const tasks = await Task.find();
